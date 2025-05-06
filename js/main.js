@@ -11,7 +11,17 @@ const svg = d3.select("#parallel")
 .append("g")
   .attr("transform",
         `translate(${margin.left},${margin.top})`);
-
+  const tooltip = d3.select("#parallel")
+    .append("div")
+    .style("position", "absolute")
+    .style("z-index", "10")
+    .style("visibility", "hidden")
+    .style("background", "rgba(0, 0, 0, 0.8)")
+    .style("color", "white")
+    .style("padding", "6px")
+    .style("border-radius", "4px")
+    .style("font-size", "12px")
+    .style("pointer-events", "none");
 // Parse the Data
 d3.csv('data/transfersdv.csv').then( function(data) {
 
@@ -37,7 +47,8 @@ d3.csv('data/transfersdv.csv').then( function(data) {
     .range([0, width])
     .padding(1)
     .domain(dimensions);
-
+  //color
+  
   // The path function take a row of the csv as input, and return x and y coordinates of the line to draw for this raw.
   function path(d) {
       return d3.line()(dimensions.map(function(p) { return [x(p), y[p](d[p])]; }));
@@ -45,15 +56,45 @@ d3.csv('data/transfersdv.csv').then( function(data) {
 
   console.log("Sample path:", path(data[0]));
   // Draw the lines
-  svg
-    .selectAll("myPath")
-    .data(data)
-    .join("path")
-    .attr("d",  path)
-    .style("fill", "none")
-    .style("stroke", "#69b3a2")
-    .style("opacity", 0.5)
+  const colorDimension = "Performance_Gls";
+  const color = d3.scaleSequential()
+      .domain(d3.extent(data, d => +d[colorDimension]))
+      .range(["#fde0dd", "#2ca25f"]);
 
+      svg
+      .selectAll("myPath")
+      .data(data)
+      .join("path")
+      .attr("d",  path)
+      .style("fill", "none")
+      .style("stroke", d => color(+d[colorDimension]))  // use your color scale here
+      .style("opacity", 0.5)
+      .on("mouseover", function(event, d) {
+        d3.select(this)
+          .style("stroke-width", 3)
+          .style("opacity", 1)
+          .raise(); // bring to front
+    
+        tooltip
+        .html(`
+          <strong>Player:</strong> ${d["player name"]}<br>
+          <strong>current team:</strong> ${d["to club name"]}<br><br>
+          <strong>transfered from:</strong> ${d["team"]}<br><br>
+          ${dimensions.map(dim => `<strong>${dim}</strong>: ${d[dim]}`).join("<br>")}
+        `)
+          .style("visibility", "visible");
+      })
+      .on("mousemove", function(event) {
+        tooltip
+          .style("top", (event.pageY + 10) + "px")
+          .style("left", (event.pageX + 10) + "px");
+      })
+      .on("mouseout", function() {
+        d3.select(this)
+          .style("stroke-width", null)
+          .style("opacity", 0.5);
+        tooltip.style("visibility", "hidden");
+      });
   // Draw the axis:
   svg.selectAll("myAxis")
     // For each dimension of the dataset I add a 'g' element:
