@@ -22,15 +22,20 @@ const svg = d3.select("#parallel")
     .style("border-radius", "4px")
     .style("font-size", "12px")
     .style("pointer-events", "none");
+    let fullData = [];  // will store the full dataset
+    let selectedPosition = "All";
+    let selectedLeague = "All";
 // Parse the Data
 d3.csv('data/transfersdv.csv').then( function(data) {
 
     // Define the list of columns to include
     const included = ["transfer fee", "age", "Performance_Gls", "Performance_Ast", "Progression_PrgC", "Progression_PrgP", "Progression_PrgR", "Playing Time_Min",];
 
+    
     // Extract only the specified dimensions for the plot
     dimensions = Object.keys(data[0]).filter(function(d) { 
         return included.includes(d);
+
     });
 
   // For each dimension, I build a linear scale. I store all in a y object
@@ -99,7 +104,6 @@ const color = d3.scaleSequential()
   .domain(feeExtent)
   .interpolator(customInterpolator);
 
-  updateLines(data); // this draws all lines initially
 
   // Draw the axis:
   svg.selectAll("myAxis")
@@ -116,18 +120,35 @@ const color = d3.scaleSequential()
       .attr("y", -9)
       .text(function(d) { return d; })
       .style("fill", "black")
-
+      fullData = data;
+      applyFilters();
 
 
       document.getElementById("positionFilter").addEventListener("change", function () {
-        const selected = this.value;
-      
-        const filteredData = selected === "All"
-          ? data
-          : data.filter(d => d.position && d.position.split(",")[0].trim() === selected);
-      
-        updateLines(filteredData);
+        selectedPosition = this.value;
+        applyFilters();
       });
+      document.getElementById("leagueFilter").addEventListener("change", function () {
+        selectedLeague = this.value;
+        applyFilters();
+      });
+      function applyFilters() {
+        let filtered = fullData;
+      
+        if (selectedPosition !== "All") {
+          filtered = filtered.filter(d =>
+            d.position && d.position.split(",")[0].trim() === selectedPosition
+          );
+        }
+      
+        if (selectedLeague !== "All") {
+          filtered = filtered.filter(d => d.league === selectedLeague);
+        }
+      
+        updateLines(filtered);
+      }
+      
+            
       
       
       function updateLines(filteredData) {
