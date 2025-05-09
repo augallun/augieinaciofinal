@@ -26,7 +26,7 @@ const svg = d3.select("#parallel")
 d3.csv('data/transfersdv.csv').then( function(data) {
 
     // Define the list of columns to include
-    const included = ["transfer fee", "age", "Performance_Gls", "Performance_Ast", "Progression_PrgC", "Progression_PrgP", "Progression_PrgR"];
+    const included = ["transfer fee", "age", "Performance_Gls", "Performance_Ast", "Progression_PrgC", "Progression_PrgP", "Progression_PrgR", "Playing Time_Min",];
 
     // Extract only the specified dimensions for the plot
     dimensions = Object.keys(data[0]).filter(function(d) { 
@@ -55,20 +55,63 @@ d3.csv('data/transfersdv.csv').then( function(data) {
   }
 
   console.log("Sample path:", path(data[0]));
-  // Draw the lines
-  const colorDimension = "Performance_Gls";
-  const color = d3.scaleSequential()
-      .domain(d3.extent(data, d => +d[colorDimension]))
-      .range(["#fde0dd", "#2ca25f"]);
 
-      svg
+  const getPrimaryPosition = pos => pos.split(",")[0].trim();
+  
+  // Draw the lines
+  //const colorDimension = "transfer fee";
+  //const color = d3.scaleSequential()
+      //.domain(d3.extent(data, d => +d[colorDimension]))
+      //.range(["#fde0dd", "#2ca25f"]);
+    //  const colorDimension = "transfer fee";
+    //  const feeExtent = d3.extent(data, d => +d[colorDimension]);
+    //  const customInterpolator = d3.scaleLinear()
+   // .domain([0, 1])
+    //.range([
+     //   d3.rgb("#ffffcc"),
+     //   d3.rgb("#800026")
+     // ])
+    //.interpolate(d3.interpolateRgb);
+  
+  //const color = d3.scaleSequential()
+   //   .domain(feeExtent)
+    //  .interpolator(t => customInterpolator((t - feeExtent[0]) / (feeExtent[1] - feeExtent[0])));
+    const colorDimension = "transfer fee";
+const feeExtent = d3.extent(data, d => +d[colorDimension]);
+
+const customColors = [
+  "#ffffcc",
+  "#ffeda0",
+  "#fed976",
+  "#feb24c",
+  "#fd8d3c",
+  "#fc4e2a",
+  "#e31a1c",
+  "#bd0026",
+  "#800026"
+];
+
+// Create a smooth interpolator from your custom color list
+const customInterpolator = d3.piecewise(d3.interpolateRgb, customColors);
+
+// Now plug it into a proper sequential color scale
+const color = d3.scaleSequential()
+  .domain(feeExtent)
+  .interpolator(customInterpolator);
+
+    svg
       .selectAll("myPath")
       .data(data)
       .join("path")
       .attr("d",  path)
       .style("fill", "none")
       .style("stroke", d => color(+d[colorDimension]))  // use your color scale here
-      .style("opacity", 0.5)
+      //.style("stroke-dasharray", d => {
+        //const primaryPos = getPrimaryPosition(d.position);
+        //return positionStyles[primaryPos] || "0";
+      //})
+      .style("fill", "none")
+      .style("opacity", 0.75)
       .on("mouseover", function(event, d) {
         d3.select(this)
           .style("stroke-width", 3)
@@ -111,4 +154,34 @@ d3.csv('data/transfersdv.csv').then( function(data) {
       .text(function(d) { return d; })
       .style("fill", "black")
 
-})
+
+
+      document.getElementById("positionFilter").addEventListener("change", function() {
+        const selected = this.value;
+      
+        const filteredData = selected === "All"
+          ? data
+          : data.filter(d => d.position.split(",")[0].trim() === selected);
+      
+        updateLines(filteredData);
+      });
+      
+      function updateLines(filteredData) {
+        const lines = svg.selectAll("path").data(filteredData, d => d.id || d.name); // use unique key
+      
+        lines.enter()
+          .append("path")
+          .attr("d", d => path(d))
+          .style("stroke", d => color(+d[colorDimension]))
+          .style("fill", "none")
+          .merge(lines)
+          .transition()
+          .duration(500)
+          .attr("d", d => line(d));
+      
+        lines.exit().remove();
+      };
+
+});
+
+
