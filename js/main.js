@@ -1,6 +1,6 @@
 // set the dimensions and margins of the graph
 const margin = {top: 30, right: 10, bottom: 10, left: 0},
-  width = 1000 - margin.left - margin.right,
+  width = 1300 - margin.left - margin.right,
   height = 600 - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
@@ -22,15 +22,29 @@ const svg = d3.select("#parallel")
     .style("border-radius", "4px")
     .style("font-size", "12px")
     .style("pointer-events", "none");
+    let fullData = [];  // will store the full dataset
+    let selectedPosition = "All";
+    let selectedLeague = "All";
 // Parse the Data
 d3.csv('data/transfersdv.csv').then( function(data) {
 
     // Define the list of columns to include
     const included = ["transfer fee", "age", "Performance_Gls", "Performance_Ast", "Progression_PrgC", "Progression_PrgP", "Progression_PrgR", "Playing Time_Min",];
-
+    const displayNames = {
+      "transfer fee": "Transfer Fee (€M)",
+      "age": "Age",
+      "Performance_Gls": "Goals",
+      "Performance_Ast": "Assists",
+      "Progression_PrgC": "Progressive Carries",
+      "Progression_PrgP": "Progressive Passes",
+      "Progression_PrgR": "Progressive Receptions",
+      "Playing Time_Min": "Minutes Played"
+    };
+    
     // Extract only the specified dimensions for the plot
     dimensions = Object.keys(data[0]).filter(function(d) { 
         return included.includes(d);
+
     });
 
   // For each dimension, I build a linear scale. I store all in a y object
@@ -99,47 +113,7 @@ const color = d3.scaleSequential()
   .domain(feeExtent)
   .interpolator(customInterpolator);
 
-    svg
-      .selectAll("myPath")
-      .data(data)
-      .join("path")
-      .attr("d",  path)
-      .style("fill", "none")
-      .style("stroke", d => color(+d[colorDimension]))  // use your color scale here
-      //.style("stroke-dasharray", d => {
-        //const primaryPos = getPrimaryPosition(d.position);
-        //return positionStyles[primaryPos] || "0";
-      //})
-      .style("fill", "none")
-      .style("opacity", 0.75)
-      .on("mouseover", function(event, d) {
-        d3.select(this)
-          .style("stroke-width", 5)
-          .style("opacity", 1)
-          .style("stroke", "black")
-          .raise(); // bring to front
-    
-        tooltip
-        .html(`
-          <strong>Player:</strong> ${d["player name"]}<br>
-          <strong>current team:</strong> ${d["to club name"]}<br><br>
-          <strong>transfered from:</strong> ${d["team"]}<br><br>
-          ${dimensions.map(dim => `<strong>${dim}</strong>: ${d[dim]}`).join("<br>")}
-        `)
-          .style("visibility", "visible");
-      })
-      .on("mousemove", function(event) {
-        tooltip
-          .style("top", (event.pageY + 10) + "px")
-          .style("left", (event.pageX + 10) + "px");
-      })
-      .on("mouseout", function() {
-        d3.select(this)
-          .style("stroke-width", null)
-          .style("opacity", 0.75)
-          .style("stroke", d => color(+d[colorDimension])) // reset to original color
-        tooltip.style("visibility", "hidden");
-      });
+
   // Draw the axis:
   svg.selectAll("myAxis")
     // For each dimension of the dataset I add a 'g' element:
@@ -153,36 +127,87 @@ const color = d3.scaleSequential()
     .append("text")
       .style("text-anchor", "middle")
       .attr("y", -9)
-      .text(function(d) { return d; })
+      .style("font-size", "13px")
+      .text(d => displayNames[d] || d)
       .style("fill", "black")
+      fullData = data;
+      applyFilters();
 
 
-
-      document.getElementById("positionFilter").addEventListener("change", function() {
-        const selected = this.value;
-      
-        const filteredData = selected === "All"
-          ? data
-          : data.filter(d => d.position.split(",")[0].trim() === selected);
-      
-        updateLines(filteredData);
+      document.getElementById("positionFilter").addEventListener("change", function () {
+        selectedPosition = this.value;
+        applyFilters();
       });
+      document.getElementById("leagueFilter").addEventListener("change", function () {
+        selectedLeague = this.value;
+        applyFilters();
+      });
+      function applyFilters() {
+        let filtered = fullData;
+      
+        if (selectedPosition !== "All") {
+          filtered = filtered.filter(d =>
+            d.position && d.position.split(",")[0].trim() === selectedPosition
+          );
+        }
+      
+        if (selectedLeague !== "All") {
+          filtered = filtered.filter(d => d.league === selectedLeague);
+        }
+      
+        updateLines(filtered);
+      }
+      
+            
+      
       
       function updateLines(filteredData) {
-        const lines = svg.selectAll("path").data(filteredData, d => d.id || d.name); // use unique key
+        filteredData.sort((a, b) => +a[colorDimension] - +b[colorDimension]); // ascending = yellow on top
+
+
+        // Remove all existing lines
+        svg.selectAll("path").remove();
       
-        lines.enter()
+        // Redraw with filtered data
+        svg.selectAll("path")
+          .data(filteredData)
+          .enter()
           .append("path")
           .attr("d", d => path(d))
           .style("stroke", d => color(+d[colorDimension]))
           .style("fill", "none")
-          .merge(lines)
-          .transition()
-          .duration(500)
-          .attr("d", d => line(d));
+          .style("opacity", 0.75)
+          .on("mouseover", function(event, d) {
+            d3.select(this)
+              .style("stroke-width", 5)
+              .style("opacity", 1)
+              .style("stroke", "black")
+              .raise();
       
-        lines.exit().remove();
-      };
+            tooltip
+              .html(`
+                <strong>Player:</strong> ${d["player name"]}<br>
+                <strong>Current Team:</strong> ${d["to club name"]}<br>
+                <strong>Transferred From:</strong> ${d["team"]}<br><br>
+                ${dimensions.map(dim => `<strong>${dim}</strong>: ${d[dim]}`).join("<br>")}
+              `)
+              .style("visibility", "visible");
+          })
+          .on("mousemove", function(event) {
+            tooltip
+              .style("top", (event.pageY + 10) + "px")
+              .style("left", (event.pageX + 10) + "px");
+          })
+          .on("mouseout", function(event, d) {
+            d3.select(this)
+              .style("stroke-width", null)
+              .style("opacity", 0.75)
+              .style("stroke", d => color(+d[colorDimension]));
+            tooltip.style("visibility", "hidden");
+          });
+      }
+      
+
 
 });
 
