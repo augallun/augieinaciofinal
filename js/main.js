@@ -114,8 +114,9 @@ const color = d3.scaleSequential()
       .style("opacity", 0.75)
       .on("mouseover", function(event, d) {
         d3.select(this)
-          .style("stroke-width", 3)
+          .style("stroke-width", 5)
           .style("opacity", 1)
+          .style("stroke", "black")
           .raise(); // bring to front
     
         tooltip
@@ -135,7 +136,8 @@ const color = d3.scaleSequential()
       .on("mouseout", function() {
         d3.select(this)
           .style("stroke-width", null)
-          .style("opacity", 0.5);
+          .style("opacity", 0.75)
+          .style("stroke", d => color(+d[colorDimension])) // reset to original color
         tooltip.style("visibility", "hidden");
       });
   // Draw the axis:
