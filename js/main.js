@@ -1,6 +1,6 @@
 // set the dimensions and margins of the graph
 const margin = {top: 30, right: 10, bottom: 10, left: 0},
-  width = 1000 - margin.left - margin.right,
+  width = 1300 - margin.left - margin.right,
   height = 600 - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
@@ -30,7 +30,16 @@ d3.csv('data/transfersdv.csv').then( function(data) {
 
     // Define the list of columns to include
     const included = ["transfer fee", "age", "Performance_Gls", "Performance_Ast", "Progression_PrgC", "Progression_PrgP", "Progression_PrgR", "Playing Time_Min",];
-
+    const displayNames = {
+      "transfer fee": "Transfer Fee (€M)",
+      "age": "Age",
+      "Performance_Gls": "Goals",
+      "Performance_Ast": "Assists",
+      "Progression_PrgC": "Progressive Carries",
+      "Progression_PrgP": "Progressive Passes",
+      "Progression_PrgR": "Progressive Receptions",
+      "Playing Time_Min": "Minutes Played"
+    };
     
     // Extract only the specified dimensions for the plot
     dimensions = Object.keys(data[0]).filter(function(d) { 
@@ -118,7 +127,8 @@ const color = d3.scaleSequential()
     .append("text")
       .style("text-anchor", "middle")
       .attr("y", -9)
-      .text(function(d) { return d; })
+      .style("font-size", "13px")
+      .text(d => displayNames[d] || d)
       .style("fill", "black")
       fullData = data;
       applyFilters();
