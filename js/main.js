@@ -99,47 +99,8 @@ const color = d3.scaleSequential()
   .domain(feeExtent)
   .interpolator(customInterpolator);
 
-    svg
-      .selectAll("myPath")
-      .data(data)
-      .join("path")
-      .attr("d",  path)
-      .style("fill", "none")
-      .style("stroke", d => color(+d[colorDimension]))  // use your color scale here
-      //.style("stroke-dasharray", d => {
-        //const primaryPos = getPrimaryPosition(d.position);
-        //return positionStyles[primaryPos] || "0";
-      //})
-      .style("fill", "none")
-      .style("opacity", 0.75)
-      .on("mouseover", function(event, d) {
-        d3.select(this)
-          .style("stroke-width", 5)
-          .style("opacity", 1)
-          .style("stroke", "black")
-          .raise(); // bring to front
-    
-        tooltip
-        .html(`
-          <strong>Player:</strong> ${d["player name"]}<br>
-          <strong>current team:</strong> ${d["to club name"]}<br><br>
-          <strong>transfered from:</strong> ${d["team"]}<br><br>
-          ${dimensions.map(dim => `<strong>${dim}</strong>: ${d[dim]}`).join("<br>")}
-        `)
-          .style("visibility", "visible");
-      })
-      .on("mousemove", function(event) {
-        tooltip
-          .style("top", (event.pageY + 10) + "px")
-          .style("left", (event.pageX + 10) + "px");
-      })
-      .on("mouseout", function() {
-        d3.select(this)
-          .style("stroke-width", null)
-          .style("opacity", 0.75)
-          .style("stroke", d => color(+d[colorDimension])) // reset to original color
-        tooltip.style("visibility", "hidden");
-      });
+  updateLines(data); // this draws all lines initially
+
   // Draw the axis:
   svg.selectAll("myAxis")
     // For each dimension of the dataset I add a 'g' element:
@@ -158,31 +119,64 @@ const color = d3.scaleSequential()
 
 
 
-      document.getElementById("positionFilter").addEventListener("change", function() {
+      document.getElementById("positionFilter").addEventListener("change", function () {
         const selected = this.value;
       
         const filteredData = selected === "All"
           ? data
-          : data.filter(d => d.position.split(",")[0].trim() === selected);
+          : data.filter(d => d.position && d.position.split(",")[0].trim() === selected);
       
         updateLines(filteredData);
       });
       
-      function updateLines(filteredData) {
-        const lines = svg.selectAll("path").data(filteredData, d => d.id || d.name); // use unique key
       
-        lines.enter()
+      function updateLines(filteredData) {
+        filteredData.sort((a, b) => +a[colorDimension] - +b[colorDimension]); // ascending = yellow on top
+
+
+        // Remove all existing lines
+        svg.selectAll("path").remove();
+      
+        // Redraw with filtered data
+        svg.selectAll("path")
+          .data(filteredData)
+          .enter()
           .append("path")
           .attr("d", d => path(d))
           .style("stroke", d => color(+d[colorDimension]))
           .style("fill", "none")
-          .merge(lines)
-          .transition()
-          .duration(500)
-          .attr("d", d => line(d));
+          .style("opacity", 0.75)
+          .on("mouseover", function(event, d) {
+            d3.select(this)
+              .style("stroke-width", 5)
+              .style("opacity", 1)
+              .style("stroke", "black")
+              .raise();
       
-        lines.exit().remove();
-      };
+            tooltip
+              .html(`
+                <strong>Player:</strong> ${d["player name"]}<br>
+                <strong>Current Team:</strong> ${d["to club name"]}<br>
+                <strong>Transferred From:</strong> ${d["team"]}<br><br>
+                ${dimensions.map(dim => `<strong>${dim}</strong>: ${d[dim]}`).join("<br>")}
+              `)
+              .style("visibility", "visible");
+          })
+          .on("mousemove", function(event) {
+            tooltip
+              .style("top", (event.pageY + 10) + "px")
+              .style("left", (event.pageX + 10) + "px");
+          })
+          .on("mouseout", function(event, d) {
+            d3.select(this)
+              .style("stroke-width", null)
+              .style("opacity", 0.75)
+              .style("stroke", d => color(+d[colorDimension]));
+            tooltip.style("visibility", "hidden");
+          });
+      }
+      
+
 
 });
 
