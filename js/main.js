@@ -1,5 +1,5 @@
 // set the dimensions and margins of the graph
-const margin = {top: 30, right: 10, bottom: 10, left: 0},
+const margin = {top: 30, right: 10, bottom: 70, left: 0};
   width = 1300 - margin.left - margin.right,
   height = 600 - margin.top - margin.bottom;
 
@@ -135,6 +135,7 @@ const color = d3.scaleSequential()
       applyFilters();
 
 
+
       document.getElementById("positionFilter").addEventListener("change", function () {
         selectedPosition = this.value;
         applyFilters();
@@ -207,7 +208,59 @@ const color = d3.scaleSequential()
             tooltip.style("visibility", "hidden");
           });
       }
-      
+// Create a legend group
+const legendWidth = 300;
+const legendHeight = 10;
+
+const legendGroup = svg.append("g")
+  .attr("class", "legend")
+  .attr("transform", `translate(${(width - legendWidth) / 2}, +520)`)
+
+
+
+// Define gradient
+const defs = d3.select("svg").append("defs");
+const gradient = defs.append("linearGradient")
+  .attr("id", "color-gradient")
+  .attr("x1", "0%").attr("y1", "0%")
+  .attr("x2", "100%").attr("y2", "0%");
+
+const numStops = customColors.length;
+customColors.forEach((color, i) => {
+  gradient.append("stop")
+    .attr("offset", `${(i / (numStops - 1)) * 100}%`)
+    .attr("stop-color", color);
+});
+
+// Draw gradient rect
+legendGroup.append("rect")
+  .attr("width", legendWidth)
+  .attr("height", legendHeight)
+  .style("fill", "url(#color-gradient)");
+
+// Add axis scale under the legend
+const legendScale = d3.scaleLinear()
+  .domain(feeExtent)
+  .range([0, legendWidth]);
+
+const legendAxis = d3.axisBottom(legendScale)
+  .ticks(5)
+  .tickFormat(d3.format("$.2s"));
+
+legendGroup.append("g")
+  .attr("transform", `translate(0, ${legendHeight})`)
+  .call(legendAxis)
+  .selectAll("text")
+  .style("font-size", "10px");
+
+// Legend label
+legendGroup.append("text")
+  .attr("x", legendWidth / 2)
+  .attr("y", -6)
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .style("fill", "black")
+  .text("Transfer Fee (€M)");
 
 
 });
