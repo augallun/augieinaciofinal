@@ -5,18 +5,38 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Augie Inacio Data Viz Final</title>
+    <style>
+      .sr-only {
+        position:absolute;
+        left:-10000px;
+        top:auto;
+        width:1px;
+        height:1px;
+        overflow:hidden;
+        }
+    </style>
 </head>
 <body>
+  <header>
     <h1>Analyzing Tranasfer Fees From The Top 5 Soccer Leagues in 2024</h1>
     <h2>By Augie Gallun and Inacio de Souza</h2>
-    <select id="positionFilter">
+  </header>
+    <main>
+    <nav aria-label = "Filters">
+    <label>
+      <select id="positionFilter" >
         <option value="All">All Positions</option>
         <option value="FW">Forward (FW)</option>
         <option value="MF">Midfield (MF)</option>
         <option value="DF">Defense (DF)</option>
         <option value="GK">Goalkeeper (GK)</option>
       </select>
+
+    </label>
+    
+    <label>
       <select id="leagueFilter">
+        
         <option value="All">All Leagues</option>
         <option value="eng Premier League">Premier League</option>
         <option value="es La Liga">La Liga</option>
@@ -24,8 +44,15 @@
         <option value="it Serie A">Serie A</option>
         <option value="fr Ligue 1">Ligue 1</option>
       </select>
+    </label>
+  </nav>
       
     <div id="parallel"></div>
+  </main>
+  <footer>
+    <h3>This parallel coordinates visualization displays soccer player transfer fees from the 2024-25 season alongside their performance statistics from the previous season.</h3>
+    <h4 class ="sr-only">This chart shows that younger soccer players, especially attackers, generally command higher transfer fees during the 2024-25 season, while older players tend to be less expensive. Players with higher transfer fees also tend to have better performance stats, particularly in goals and assists. The highest goal tally is 28, the highest number of assists is 11, and the highest transfer fee is €75 million. At the low end, some players had 0 goals or assists, and the lowest transfer fee is €100,000.</h4>
+  </footer>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/6.0.0/d3.min.js"></script>
     <script src="js/main.js"></script>
 </body>
