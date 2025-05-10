@@ -26,6 +26,19 @@ const svg = d3.select("#parallel")
     let fullData = [];  // will store the full dataset
     let selectedPosition = "All";
     let selectedLeague = "All";
+  const axisTooltip = d3.select("#parallel")
+    .append("div")
+    .style("position", "absolute")
+    .style("z-index", "11")
+    .style("visibility", "hidden")
+    .style("background", "rgba(0, 0, 0, 0.85)")
+    .style("color", "white")
+    .style("padding", "8px")
+    .style("border-radius", "6px")
+    .style("font-size", "13px")
+    .style("max-width", "220px")
+    .style("pointer-events", "none");
+  
 // Parse the Data
 d3.csv('data/transfersdv.csv').then( function(data) {
 
@@ -41,6 +54,17 @@ d3.csv('data/transfersdv.csv').then( function(data) {
       "Progression_PrgR": "Progressive Receptions",
       "Playing Time_Min": "Minutes Played"
     };
+    const axisDescriptions = {
+      "transfer fee": "Estimated cost paid for the player’s transfer in millions of euros.",
+      "age": "Player's age during the 2023–2024 season.",
+      "Performance_Gls": "Total goals for the 2023–2024 season.",
+      "Performance_Ast": "Total assists provided in the 2023–2024 season.",
+      "Progression_PrgC": "Carries that moved the ball significantly forward.",
+      "Progression_PrgP": "Passes that moved the ball significantly forward.",
+      "Progression_PrgR": "Receptions of progressive passes.",
+      "Playing Time_Min": "Total minutes played in all club competitions."
+    };
+    
     
     // Extract only the specified dimensions for the plot
     dimensions = Object.keys(data[0]).filter(function(d) { 
@@ -126,18 +150,37 @@ const color = d3.scaleSequential()
     .each(function(d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
     // Add axis title
     .append("text")
-      .style("text-anchor", "middle")
-      .attr("y", -9)
-      .style("font-size", "13px")
-      .text(d => displayNames[d] || d)
-      .style("fill", "black")
-      fullData = data;
-      applyFilters();
+    .style("text-anchor", "middle")
+    .attr("y", -9)
+    .style("font-size", "13px")
+    .text(d => displayNames[d] || d)
+    .style("fill", "black")
+    .on("mouseover", function(event, d) {
+      axisTooltip
+        .html(`
+          <div style="font-size: 15px; font-weight: bold; margin-bottom: 4px;">
+            ${displayNames[d] || d}
+          </div>
+          <div>${axisDescriptions[d] || "No description available."}</div>
+        `)
+        .style("visibility", "visible");
+    })
+    .on("mousemove", function(event) {
+      axisTooltip
+        .style("top", (event.pageY + 10) + "px")
+        .style("left", (event.pageX + 10) + "px");
+    })
+    .on("mouseout", function() {
+      axisTooltip.style("visibility", "hidden");
+    });
+  
 
-
+    fullData = data;
+    applyFilters();  
 
       document.getElementById("positionFilter").addEventListener("change", function () {
         selectedPosition = this.value;
+        
         applyFilters();
       });
       document.getElementById("leagueFilter").addEventListener("change", function () {
@@ -168,13 +211,16 @@ const color = d3.scaleSequential()
 
 
         // Remove all existing lines
-        svg.selectAll("path").remove();
+        svg.selectAll(".data-line").remove();
+
       
         // Redraw with filtered data
-        svg.selectAll("path")
+        svg.selectAll(".data-line")
           .data(filteredData)
           .enter()
           .append("path")
+          .attr("class", "data-line")  
+      
           .attr("d", d => path(d))
           .style("stroke", d => color(+d[colorDimension]))
           .style("fill", "none")
@@ -194,7 +240,9 @@ const color = d3.scaleSequential()
                 ${dimensions.map(dim => `<strong>${dim}</strong>: ${d[dim]}`).join("<br>")}
               `)
               .style("visibility", "visible");
+
           })
+
           .on("mousemove", function(event) {
             tooltip
               .style("top", (event.pageY + 10) + "px")
@@ -206,7 +254,11 @@ const color = d3.scaleSequential()
               .style("opacity", 0.75)
               .style("stroke", d => color(+d[colorDimension]));
             tooltip.style("visibility", "hidden");
+
           });
+          console.log("Filtered data count:", filteredData.length);
+
+
       }
 // Create a legend group
 const legendWidth = 300;
@@ -262,7 +314,7 @@ legendGroup.append("text")
   .style("fill", "black")
   .text("Transfer Fee (€M)");
 
-
+  console.log("Path for first row:", path(data[0]));
 });
 
 
