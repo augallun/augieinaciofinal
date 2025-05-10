@@ -5,6 +5,7 @@ const margin = {top: 30, right: 10, bottom: 10, left: 0},
 
 // append the svg object to the body of the page
 const svg = d3.select("#parallel")
+
 .append("svg")
   .attr("width", width + margin.left + margin.right)
   .attr("height", height + margin.top + margin.bottom)
