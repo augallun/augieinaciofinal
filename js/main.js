@@ -45,7 +45,7 @@ d3.csv('data/transfersdv.csv').then( function(data) {
     // Define the list of columns to include
     const included = ["transfer fee", "age", "Performance_Gls", "Performance_Ast", "Progression_PrgC", "Progression_PrgP", "Progression_PrgR", "Playing Time_Min",];
     const displayNames = {
-      "transfer fee": "Transfer Fee (€M)",
+      "transfer fee": "Transfer Fee (€)",
       "age": "Age",
       "Performance_Gls": "Goals",
       "Performance_Ast": "Assists",
@@ -55,7 +55,7 @@ d3.csv('data/transfersdv.csv').then( function(data) {
       "Playing Time_Min": "Minutes Played"
     };
     const axisDescriptions = {
-      "transfer fee": "Estimated cost paid for the player’s transfer in millions of euros.",
+      "transfer fee": "Estimated cost paid for the player’s transfer in euros.",
       "age": "Player's age during the 2023–2024 season.",
       "Performance_Gls": "Total goals for the 2023–2024 season.",
       "Performance_Ast": "Total assists provided in the 2023–2024 season.",
@@ -303,7 +303,7 @@ legendGroup.append("g")
   .attr("transform", `translate(0, ${legendHeight})`)
   .call(legendAxis)
   .selectAll("text")
-  .style("font-size", "10px");
+  .style("font-size", "12px");
 
 // Legend label
 legendGroup.append("text")
@@ -312,7 +312,7 @@ legendGroup.append("text")
   .attr("text-anchor", "middle")
   .style("font-size", "12px")
   .style("fill", "black")
-  .text("Transfer Fee (€M)");
+  .text("Transfer Fee (€)");
 
   console.log("Path for first row:", path(data[0]));
 });
